@@ -1,0 +1,11 @@
+[Unit]
+Description=Factorio log parser
+Before=factorio
+
+[Service]
+User=factorio
+EnvironmentFile=/etc/default/factorio-logparser.conf
+ExecStart=/usr/local/bin/factorio-logparser.py $FACTORIO_LOG --outputfile $OUTPUT_FILE --statusfrequency $STATUS_FREQUENCY 
+
+[Install]
+WantedBy=multi-user.target
