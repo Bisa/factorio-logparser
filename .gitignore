@@ -1,1 +1,2 @@
-*.con*f
+*.conf
+systemd/factorio-logparser.service

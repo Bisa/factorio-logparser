@@ -1,11 +1,14 @@
 [Unit]
 Description=Factorio log parser
-Before=factorio
+# Uncomment this if you rely on systemd to hadle factorio
+#Before=factorio
 
 [Service]
 User=factorio
 EnvironmentFile=/etc/default/factorio-logparser.conf
 ExecStart=/usr/local/bin/factorio-logparser.py $FACTORIO_LOG --outputfile $OUTPUT_FILE --statusfrequency $STATUS_FREQUENCY 
+Restart=on-failure
+
 
 [Install]
 WantedBy=multi-user.target
