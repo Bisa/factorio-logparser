@@ -1,16 +1,8 @@
 #!/usr/bin/env python
-import threading
-import Queue
-import re
-import subprocess
-import sys
-import signal
-import time
-import datetime
-import pytz
-import json
-import os
-import argparse
+import threading, Queue, subprocess
+import re, json, argparse
+import os, sys, signal
+import time, datetime, pytz
 
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="absolute path to factorio-current.log")
