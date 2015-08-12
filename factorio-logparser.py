@@ -16,9 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="absolute path to factorio-current.log")
 parser.add_argument('-o', '--outputfile', help="absolute path to status output file")
 parser.add_argument('-f', '--statusfrequency', type=float, help="frequency in seconds for reporting status")
-options = parser.parse_args()
 
-# TODO: Break out into separate packages/files?
 class Server:
 
     peers = {}
@@ -81,22 +79,26 @@ class DateTimeEncoder(json.JSONEncoder):
             encoded_object =json.JSONEncoder.default(self, obj)
         return encoded_object
 
-#tailq = Queue.Queue(maxsize=100) # buffer at most 100 lines
-tailq = Queue.Queue() # TODO: Potential memory issue?
-
-def tail_forever(fn):
-    p = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE)
-    while 1:
-        line = p.stdout.readline()
-        tailq.put(line)
-        if not line:
-            break
+def tail_forever(filename, queue, tailing):
+    if not os.access('test', os.R_OK):
+        tailing[0] = False
+    try:
+        p = subprocess.Popen(['tail', '-F', filename], stdout=subprocess.PIPE)
+        while 1:
+            line = p.stdout.readline()
+            queue.put(line)
+            if not line:
+                break
+    except:
+        pass
+    finally:
+        tailing[0] = False
 
 def signal_handler(signal, frame):
     print('Shutting down')
     sys.exit(0)
 
-def report_status():
+def report_status(outputfile, frequency, tailing):
     try:
         status = {
             'generated': datetime.datetime.utcnow().replace(tzinfo = pytz.utc),
@@ -105,7 +107,7 @@ def report_status():
         }
         
         status_json = json.dumps(status, indent=1, sort_keys=True, separators=(',', ': '), cls=DateTimeEncoder) 
-        status_file = open(options.outputfile, 'w')
+        status_file = open(outputfile, 'w')
         status_file.write(status_json)
         status_file.close()
         print status_json
@@ -113,77 +115,74 @@ def report_status():
         # TODO: handle any file related exceptions when/if writing to disk
         # we really just want to keep reporting the status, no matter what for now
         print "Error reporting status: ", e
-    except:
-        print "Error reporting status! ", options
     finally:
-        threading.Timer(options.statusfrequency, report_status).start()
+        if tailing[0]:
+            threading.Timer(frequency, report_status, [outputfile, frequency, tailing]).start()
+
+def main(options):
+    tailq = Queue.Queue()
+    signal.signal(signal.SIGINT, signal_handler)
+    tailing = [True]
+    threading.Thread(target=tail_forever, args=(options.logfile, tailq, tailing)).start()
+    report_status(options.outputfile, options.statusfrequency, tailing)
     
+    regex = {}
+    # Synchronizer.cpp
+    regex[0] = {}
+    regex[0][0] = re.compile("NetworkInputHandler.cpp")
+    regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", Server.remove_peer)
+    # Router.cpp
+    regex[1] = {}
+    regex[1][0] = re.compile("Router.cpp")
+    regex[1]['addingpeer'] = Processor("adding peer\\((?P<peer_id>\d+)\\) address\\((?P<peer_ip>([0-9]{1,3}\\.){3}[0-9]{1,3})\\:(?P<peer_port>[0-9]{1,5})\\) sending connectionAccept\\(true\\)$", Server.add_peer)
+    regex[1]['server_stop'] = Processor("Router state \\-\\> Disconnected$", Server.stop)
+    # MultiplayerManager.cpp
+    regex[2] = {}
+    regex[2][0] = re.compile("MultiplayerManager.cpp")
+    regex[2]['set_username'] = Processor("Received peer info for peer\\((?P<peer_id>\d+)\\) username\\((?P<username>.+)\\)\\.$", Server.set_username)
+    regex[2]['server_start'] = Processor("changing state from\\(CreatingGame\\) to\\(InGame\\)$", Server.start)
 
-signal.signal(signal.SIGINT, signal_handler)
+    while tailing[0]:
+        try:
+            line = tailq.get_nowait() # throws Queue.Empty if there are no lines to read
+            for group in regex.iterkeys():
+                groupmatch = regex[group][0].search(line)
+                if groupmatch:
+                    for processor_id in regex[group].iterkeys():
+                        # Skip the group identifier on index 0
+                        if processor_id == 0:
+                            continue
+                        processor = regex[group][processor_id]
+                        match = processor.pattern.search(line)
+                        if match:
+                            print "Parsing line: ", line, "Matched: ", match.groupdict()
+                            # Convert known ints to int type
+                            # TODO: break out into a more generic "convert all integer strings to int type"-method if
+                            # we happen to run into more than the currently known integers
+                            args = match.groupdict()
+                            try:
+                                args['peer_id'] = int(args['peer_id'])
+                                args['peer_port'] = int(args['peer_port'])
+                            except:
+                                # We expect most of our regex matches to find a peer_id, the others can easily be dismissed
+                                # as exceptions and passed
+                                pass
+                            finally:
+                                #print "Processor args: ", args
+                                processor.action(args)
+                                break #processor_id
+                    break #group
 
-filename = options.logfile
-threading.Thread(target=tail_forever, args=(filename,)).start()
-report_status()
+        except Queue.Empty:
+            # Nothing to report, the tail did not find any new lines to parse
+            time.sleep(1)
+        except Exception as e:
+            print "Error! ", e, e.message
+            print "Attempted to parse line: ", line
+        except:
+            print "Something done goofed for real!"
+            print "Attempted to parse line: ", line
 
-
-utilregex = {}
-utilregex['peer_id'] = re.compile("(?<=peer\()\d+(?=\))")
-
-regex = {}
-
-# Synchronizer.cpp
-regex[0] = {}
-regex[0][0] = re.compile("NetworkInputHandler.cpp")
-regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", Server.remove_peer)
-# Router.cpp
-regex[1] = {}
-regex[1][0] = re.compile("Router.cpp")
-regex[1]['addingpeer'] = Processor("adding peer\\((?P<peer_id>\d+)\\) address\\((?P<peer_ip>([0-9]{1,3}\\.){3}[0-9]{1,3})\\:(?P<peer_port>[0-9]{1,5})\\) sending connectionAccept\\(true\\)$", Server.add_peer)
-regex[1]['server_stop'] = Processor("Router state \\-\\> Disconnected$", Server.stop)
-# MultiplayerManager.cpp
-regex[2] = {}
-regex[2][0] = re.compile("MultiplayerManager.cpp")
-regex[2]['set_username'] = Processor("Received peer info for peer\\((?P<peer_id>\d+)\\) username\\((?P<username>.+)\\)\\.$", Server.set_username)
-regex[2]['server_start'] = Processor("changing state from\\(CreatingGame\\) to\\(InGame\\)$", Server.start)
-
-while  1:
-    try:
-        line = tailq.get_nowait() # throws Queue.Empty if there are no lines to read
-        for group in regex.iterkeys():
-            groupmatch = regex[group][0].search(line)
-            if groupmatch:
-                for processor_id in regex[group].iterkeys():
-                    # Skip the group identifier on index 0
-                    if processor_id == 0:
-                        continue
-                    processor = regex[group][processor_id]
-                    match = processor.pattern.search(line)
-                    if match:
-                        print "Parsing line: ", line, "Matched: ", match.groupdict()
-                        # Convert known ints to int type
-                        # TODO: break out into a more generic "convert all integer strings to int type"-method if
-                        # we happen to run into more than the currently known integers
-                        args = match.groupdict()
-                        try:
-                            args['peer_id'] = int(args['peer_id'])
-                            args['peer_port'] = int(args['peer_port'])
-                        except:
-                            # We expect most of our regex matches to find a peer_id, the others can easily be dismissed
-                            # as exceptions and passed
-                            pass
-                        finally:
-                            #print "Processor args: ", args
-                            processor.action(args)
-                            break #processor_id
-                break #group
-
-    except Queue.Empty:
-        # Nothing to report, the tail did not find any new lines to parse
-        time.sleep(1)
-    except Exception as e:
-        print "Error! ", e, e.message
-        print "Attempted to parse line: ", line
-    except:
-        print "Something done goofed for real!"
-        print "Attempted to parse line: ", line
-
+if __name__ == '__main__':
+    options = parser.parse_args()
+    sys.exit(main(options))
