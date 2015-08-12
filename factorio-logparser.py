@@ -4,10 +4,6 @@ import re, json, argparse
 import os, sys, signal
 import time, datetime, pytz
 
-parser = argparse.ArgumentParser()
-parser.add_argument('logfile', help="absolute path to factorio-current.log")
-parser.add_argument('-o', '--outputfile', help="absolute path to status output file")
-parser.add_argument('-f', '--statusfrequency', type=float, help="frequency in seconds for reporting status")
 
 class Server:
 
@@ -176,5 +172,11 @@ def main(options):
             print "Attempted to parse line: ", line
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('logfile', help="absolute path to factorio-current.log")
+    parser.add_argument('-o', '--outputfile', help="absolute path to status output file")
+    parser.add_argument('-f', '--statusfrequency', type=float, help="frequency in seconds for reporting status")
+
     options = parser.parse_args()
     sys.exit(main(options))
+
