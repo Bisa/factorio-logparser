@@ -13,7 +13,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('logfile', nargs=1, help="absolute path to factorio-current.log")
+parser.add_argument('logfile', help="absolute path to factorio-current.log")
 parser.add_argument('-o', '--outputfile', help="absolute path to status output file")
 parser.add_argument('-f', '--statusfrequency', type=float, help="frequency in seconds for reporting status")
 options = parser.parse_args()
@@ -121,7 +121,7 @@ def report_status():
 
 signal.signal(signal.SIGINT, signal_handler)
 
-filename = "/opt/factorio/factorio-current.log"
+filename = options.logfile
 threading.Thread(target=tail_forever, args=(filename,)).start()
 report_status()
 
@@ -133,7 +133,7 @@ regex = {}
 
 # Synchronizer.cpp
 regex[0] = {}
-regex[0][0] = re.compile("Synchronizer.cpp")
+regex[0][0] = re.compile("NetworkInputHandler.cpp")
 regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", Server.remove_peer)
 # Router.cpp
 regex[1] = {}
