@@ -7,7 +7,11 @@ The script will output a status.json file containing the connected peers through
 
 While the script itself only provides the information it is up to you to use it in a creative way - for example by presenting the currently online peers on your server status page, or listing the most frequently re-connecting player this session?
 
-# JSON example
+# Output (JSON)
+The output file presents you with continous parsing result of the servers "current" state.
+Using this information we can see that since the server started, peer 3 desynced 6 times in short sequence - perhaps a temporary ban is in order? With both peer ip and port at hand you could easily parse this file and adjust your firewall rules to prevent peer 3 from reconnecting for a while.
+
+Example:
  ```JSON
 {
  "generated": "2015-08-13T11:07:24.635245+00:00",
