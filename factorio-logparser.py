@@ -47,7 +47,7 @@ class Server:
         self.peers[args['peer_id']] = {
             'peer_ip': args['peer_ip'],
             'peer_port': args['peer_port'],
-            'online': True,
+            'online': False,
             'connected': datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
         }
 
@@ -57,6 +57,12 @@ class Server:
             self.peers[args['peer_id']]['disconnected'] = \
                     datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
             self.peers[args['peer_id']]['online'] = False
+
+    def set_playerindex(self, args):
+        """Set playerindex for a specific peer and mark peer as online"""
+        if args['peer_id'] in self.peers:
+            self.peers[args['peer_id']]['online'] = True
+            self.peers[args['peer_id']]['player_index'] = args['player_index']
 
     def set_username(self, args):
         """Set username for a specific peer."""
@@ -133,6 +139,7 @@ def main(options):
     regex[0] = {}
     regex[0][0] = re.compile("NetworkInputHandler.cpp")
     regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", server.remove_peer)
+    regex[0]['player_index'] = Processor("assigning playerIndex\\((?P<player_index>\d+)\\) to peer\\((?P<peer_id>\d+)\\)", server.set_playerindex)
     # Router.cpp
     regex[1] = {}
     regex[1][0] = re.compile("Router.cpp")
