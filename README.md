@@ -58,6 +58,7 @@ Example:
   }
  }
 }
+```
 
 # Versioning
 The code adheres to Semantic Versioning v2.0.0 http://semver.org/spec/v2.0.0.html
