@@ -20,23 +20,9 @@ class Server:
     def add_peer(self, args):
         """Add peer to server list of peers."""
 
-        """
-        Ensure the status report informs if the parser is started after
-        Factorio has been started. Factorio will increment the peer id of each
-        consecutive peer, starting with id 0 for the "server" itself.
-        Since we do not register the server peer we can verify that the first
-        peer added has id 1
-        """
-        if len(self.peers) == 0 and args['peer_id'] > 1:
-            self.info['missing_peers'] = "The log parser needs to be started " \
-                                         "before factorio, we've missed " \
-                                         "registering some peers"
-
         if args['peer_id'] in self.peers:
             raise ValueError("Peer id ", args['peer_id'], " already exist, " \
                     "unable to add the same peer again!", args)
-
-        """ Ensure we have the required ip:port for new peers """
         if 'peer_ip' not in args:
             raise ValueError("Missing peer ip for peer ", args['peer_id'], \
                     ", unable to add new peer!")
@@ -116,8 +102,7 @@ def report_status(outputfile, frequency, server, tailing):
     try:
         status = {
             'generated': datetime.datetime.utcnow().replace(tzinfo = pytz.utc),
-            'peers': server.peers,
-            'info': server.info
+            'peers': server.peers
         }
         
         status_json = json.dumps(status, indent=1, sort_keys=True, separators=(',', ': '), cls=DateTimeEncoder) 
