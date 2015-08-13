@@ -48,6 +48,7 @@ class Server:
             'peer_ip': args['peer_ip'],
             'peer_port': args['peer_port'],
             'online': True,
+            'desyncs': [],
             'connected': datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
         }
 
@@ -57,6 +58,12 @@ class Server:
             self.peers[args['peer_id']]['disconnected'] = \
                     datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
             self.peers[args['peer_id']]['online'] = False
+
+    def desync_peer(self, args):
+        """Register a desync for specific peer."""
+        if args['peer_id'] in self.peers:
+            desync = datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
+            self.peers[args['peer_id']]['desyncs'].append(desync)
 
     def set_username(self, args):
         """Set username for a specific peer."""
@@ -133,6 +140,7 @@ def main(options):
     regex[0] = {}
     regex[0][0] = re.compile("NetworkInputHandler.cpp")
     regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", server.remove_peer)
+    regex[0]['desync_peer'] = Processor("Multiplayer desynchronisation: crc test\\(CheckCRCHeuristic\\) failed for mapTick\\((?P<map_tick>\d+)\\) peer\\((?P<peer_id>\d+)\\) testCrc\\([^\\)]+\\) testCrcPeerID\\(0\\)", server.desync_peer)
     # Router.cpp
     regex[1] = {}
     regex[1][0] = re.compile("Router.cpp")
