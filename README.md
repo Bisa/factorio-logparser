@@ -65,4 +65,4 @@ The code adheres to Semantic Versioning v2.0.0 http://semver.org/spec/v2.0.0.htm
 A release is denoted by the github release system using git tags.
 
 # License
-This code is realeased with the MIT license, see LICENSE.md
+This code is realeased with the MIT license, see the LICENSE file.
