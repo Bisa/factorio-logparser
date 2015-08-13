@@ -20,23 +20,9 @@ class Server:
     def add_peer(self, args):
         """Add peer to server list of peers."""
 
-        """
-        Ensure the status report informs if the parser is started after
-        Factorio has been started. Factorio will increment the peer id of each
-        consecutive peer, starting with id 0 for the "server" itself.
-        Since we do not register the server peer we can verify that the first
-        peer added has id 1
-        """
-        if len(self.peers) == 0 and args['peer_id'] > 1:
-            self.info['missing_peers'] = "The log parser needs to be started " \
-                                         "before factorio, we've missed " \
-                                         "registering some peers"
-
         if args['peer_id'] in self.peers:
             raise ValueError("Peer id ", args['peer_id'], " already exist, " \
                     "unable to add the same peer again!", args)
-
-        """ Ensure we have the required ip:port for new peers """
         if 'peer_ip' not in args:
             raise ValueError("Missing peer ip for peer ", args['peer_id'], \
                     ", unable to add new peer!")
@@ -47,7 +33,7 @@ class Server:
         self.peers[args['peer_id']] = {
             'peer_ip': args['peer_ip'],
             'peer_port': args['peer_port'],
-            'online': True,
+            'online': False,
             'desyncs': [],
             'connected': datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
         }
@@ -58,6 +44,12 @@ class Server:
             self.peers[args['peer_id']]['disconnected'] = \
                     datetime.datetime.utcnow().replace(tzinfo = pytz.utc)
             self.peers[args['peer_id']]['online'] = False
+
+    def set_playerindex(self, args):
+        """Set playerindex for a specific peer and mark peer as online"""
+        if args['peer_id'] in self.peers:
+            self.peers[args['peer_id']]['online'] = True
+            self.peers[args['peer_id']]['player_index'] = args['player_index']
 
     def desync_peer(self, args):
         """Register a desync for specific peer."""
@@ -110,8 +102,7 @@ def report_status(outputfile, frequency, server, tailing):
     try:
         status = {
             'generated': datetime.datetime.utcnow().replace(tzinfo = pytz.utc),
-            'peers': server.peers,
-            'info': server.info
+            'peers': server.peers
         }
         
         status_json = json.dumps(status, indent=1, sort_keys=True, separators=(',', ': '), cls=DateTimeEncoder) 
@@ -140,6 +131,7 @@ def main(options):
     regex[0] = {}
     regex[0][0] = re.compile("NetworkInputHandler.cpp")
     regex[0]['removepeer'] = Processor("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", server.remove_peer)
+    regex[0]['player_index'] = Processor("assigning playerIndex\\((?P<player_index>\d+)\\) to peer\\((?P<peer_id>\d+)\\)", server.set_playerindex)
     regex[0]['desync_peer'] = Processor("Multiplayer desynchronisation: crc test\\(CheckCRCHeuristic\\) failed for mapTick\\((?P<map_tick>\d+)\\) peer\\((?P<peer_id>\d+)\\) testCrc\\([^\\)]+\\) testCrcPeerID\\(0\\)", server.desync_peer)
     # Router.cpp
     regex[1] = {}
