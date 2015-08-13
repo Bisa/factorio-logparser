@@ -58,3 +58,11 @@ Example:
   }
  }
 }
+```
+
+# Versioning
+The code adheres to Semantic Versioning v2.0.0 http://semver.org/spec/v2.0.0.html
+A release is denoted by the github release system using git tags.
+
+# License
+This code is realeased with the MIT license, see the LICENSE file.
