@@ -1,3 +1,0 @@
-FACTORIO_LOG=/opt/factorio/factorio-current.log
-OUTPUT_FILE=/opt/factorio/status.json
-STATUS_FREQUENCY=5
