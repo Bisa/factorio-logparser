@@ -10,7 +10,7 @@ config = {
     'download_url': 'https://github.com/Bisa/factorio-logparser/releases',
     'author_email': 'bisa.wallin@gmail.com',
     'version': '2.0',
-    'install_requires': ['nose'],
+    'install_requires': ['nose','tailhead'],
     'packages': ['flogparser'],
     'scripts': [],
     'name': 'Factorio LogParser'
