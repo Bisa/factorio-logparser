@@ -34,23 +34,17 @@ class Parser(threading.Thread):
 
     def run(self):
         logging.info("#### PARSING: Inititated ####")
-        while True:
-           try:
-               #TODO: Parse the line and let our plugins know what just happened
-               # For now, just send the line to plugins as a PoC
-               line = self.tailqueue.get_nowait()
-               if line:
-                   for plugin in self.plugins:
-                       plugin.react(line)
-               else:
-                   time.sleep(0.5)
+        while not self.stop_flag.is_set():
+            try:
+                #TODO: Parse the line and let our plugins know what just happened
+                # For now, just send the line to plugins as a PoC
+                line = self.tailqueue.get_nowait()
+                for plugin in self.plugins:
+                    plugin.react(line)
+            except  Queue.Empty:
+                time.sleep(0.5)
 
-           except  Queue.Empty:
-               # No more messages on queue, stop processing?
-               if self.stop_flag.is_set():
-                   logging.info("#### STOPPING PARSER ####")
-                   break
-               pass
+        logging.info("#### STOPPING PARSER ####")
 
     def register_plugin(self, plugin):
         self.plugins.append(plugin)
