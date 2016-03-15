@@ -7,6 +7,7 @@ import logging
 import Queue
 import imp
 import os
+import argparse
 
 import flogparser
 
@@ -49,14 +50,14 @@ def get_listener_modules(listenerfolder):
 def load_listener(listener):
     return imp.load_module("__init__", *listener["info"])
 
-def main(fn):
+def main(options):
     logging.basicConfig(level=logging.DEBUG)
 
     with InterruptHandler() as h:
         try:
             logging.info("#### STARTING ####")
             tailqueue = Queue.Queue()
-            tailer = flogparser.Tailer(fn,h.interrupted,tailqueue)
+            tailer = flogparser.Tailer(options.logfile,h.interrupted,tailqueue)
             parser = flogparser.Parser(h.interrupted,tailqueue)
 
             for listener in get_listener_modules("./listeners"):
@@ -79,4 +80,9 @@ def main(fn):
         sys.exit(0)
 
 if __name__ == "__main__":
-    main('/tmp/foo')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('logfile',
+            help="absolute path to factorio-current.log")
+
+    options = parser.parse_args()
+    main(options)
