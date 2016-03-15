@@ -35,22 +35,19 @@ class InterruptHandler(object):
         self.released.set()
         return True
 
-PluginFolder = "./plugins"
-MainModule = "__init__"
-
-def getPlugins():
-    plugins = []
-    possibleplugins = os.listdir(PluginFolder)
-    for i in possibleplugins:
-        location = os.path.join(PluginFolder, i)
-        if not os.path.isdir(location) or not MainModule + ".py" in os.listdir(location):
+def get_listener_modules(listenerfolder):
+    listeners = []
+    possiblemodules = os.listdir(listenerfolder)
+    for folder in possiblemodules:
+        location = os.path.join(listenerfolder, folder)
+        if not os.path.isdir(location) or not "__init__.py" in os.listdir(location):
             continue
-        info = imp.find_module(MainModule, [location])
-        plugins.append({"name": i, "info": info})
-    return plugins
+        info = imp.find_module("__init__", [location])
+        listeners.append({"name": folder, "info": info})
+    return listeners
 
-def loadPlugin(plugin):
-    return imp.load_module(MainModule, *plugin["info"])
+def load_listener(listener):
+    return imp.load_module("__init__", *listener["info"])
 
 def main(fn):
     logging.basicConfig(level=logging.DEBUG)
@@ -62,8 +59,8 @@ def main(fn):
             tailer = flogparser.Tailer(fn,h.interrupted,tailqueue)
             parser = flogparser.Parser(h.interrupted,tailqueue)
 
-            for plugin in getPlugins():
-                parser.register_plugin(loadPlugin(plugin))
+            for listener in get_listener_modules("./listeners"):
+                parser.register_listener(load_listener(listener))
         
             parser.start()
             tailer.start()
