@@ -4,6 +4,7 @@ import time
 import tailhead
 import logging
 import re
+import importlib
 
 class Tailer(threading.Thread):
     def __init__(self, filename, stop_flag, tailqueue):
@@ -26,11 +27,13 @@ class Tailer(threading.Thread):
                 time.sleep(0.5)
 
 class Pattern():
-    def __init__(self, regex, actionevent, pattern_group=False):
+    def __init__(self, regex, actioneventclass, pattern_group=False):
         self.regex = re.compile(regex)
-        self.actionevent = actionevent
+        if actioneventclass:
+            self.actioneventclass = getattr(importlib.import_module("actionevents"), actioneventclass)
         if pattern_group:
-            self.children = []        
+            self.children = []
+
 
     def append_child(self, child):
         self.children.append(child)
@@ -57,10 +60,9 @@ class Parser(threading.Thread):
                         for child in pattern.children:
                             match = child.search(line)
                             if match:
-                                print "Found match: ", match.groupdict(),
-                                print " triggering: ", child.actionevent
+                                event = child.actioneventclass(match.groupdict())
                                 for listener in self.listeners:
-                                    listener.react(line)
+                                    listener.react(event)
             except Queue.Empty:
                 time.sleep(0.5)
 

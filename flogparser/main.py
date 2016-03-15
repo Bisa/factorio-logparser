@@ -63,20 +63,20 @@ def main(options):
             patterns = []
             # NetworkInputHandler.cpp
             networkpatterns = flogparser.Pattern("NetworkInputHandler\.cpp", None, True)
-            networkpatterns.append_child(flogparser.Pattern("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", "PEER_REMOVE"))
-            networkpatterns.append_child(flogparser.Pattern("assigning playerIndex\\((?P<player_index>\d+)\\) to peer\\((?P<peer_id>\d+)\\)", "PEER_PLAYERINDEX"))
-            networkpatterns.append_child(flogparser.Pattern("Multiplayer desynchronisation: crc test\\(CheckCRCHeuristic\\) failed for mapTick\\((?P<map_tick>\d+)\\) peer\\((?P<peer_id>\d+)\\) testCrc\\([^\\)]+\\) testCrcPeerID\\(0\\)", "PEER_DESYNC"))
+            networkpatterns.append_child(flogparser.Pattern("removing peer\\((?P<peer_id>\d+)\\) success\\(true\\)", "PeerRemoved"))
+            networkpatterns.append_child(flogparser.Pattern("assigning playerIndex\\((?P<player_index>\d+)\\) to peer\\((?P<peer_id>\d+)\\)", "PeerPlayerIndex"))
+            networkpatterns.append_child(flogparser.Pattern("Multiplayer desynchronisation: crc test\\(CheckCRCHeuristic\\) failed for mapTick\\((?P<map_tick>\d+)\\) peer\\((?P<peer_id>\d+)\\) testCrc\\([^\\)]+\\) testCrcPeerID\\(0\\)", "PeerDesynced"))
             patterns.append(networkpatterns)
             # Router.cpp
             routerpatterns = flogparser.Pattern("Router\.cpp", None, True)
-            routerpatterns.append_child(flogparser.Pattern("adding peer\\((?P<peer_id>\d+)\\) address\\((?P<peer_ip>([0-9]{1,3}\\.){3}[0-9]{1,3})\\:(?P<peer_port>[0-9]{1,5})\\)", "PEER_ADDED"))
-            routerpatterns.append_child(flogparser.Pattern("Router state \\-\\> Disconnected$", "SERVER_STOP"))
+            routerpatterns.append_child(flogparser.Pattern("adding peer\\((?P<peer_id>\d+)\\) address\\((?P<peer_ip>([0-9]{1,3}\\.){3}[0-9]{1,3})\\:(?P<peer_port>[0-9]{1,5})\\)", "PeerAdded"))
+            routerpatterns.append_child(flogparser.Pattern("Router state \\-\\> Disconnected$", "ServerStopped"))
             patterns.append(routerpatterns)
             # MultiplayerManager.cpp
             mppatterns = flogparser.Pattern("MultiplayerManager\.cpp", None, True)
-            mppatterns.append_child(flogparser.Pattern("Received peer info for peer\\((?P<peer_id>\d+)\\) username\\((?P<username>.+)\\)\\.$", "PEER_USERNAME"))
-            mppatterns.append_child(flogparser.Pattern("changing state from\\(CreatingGame\\) to\\(InGame\\)$", "SERVER_START"))
-            mppatterns.append_child(flogparser.Pattern("Peer dropout for peer \\((?P<peer_id>\d+)\\) by peer \\(0\\) -- removing now", "PEER_REMOVE"))
+            mppatterns.append_child(flogparser.Pattern("Received peer info for peer\\((?P<peer_id>\d+)\\) username\\((?P<username>.+)\\)\\.$", "PeerUserName"))
+            mppatterns.append_child(flogparser.Pattern("changing state from\\(CreatingGame\\) to\\(InGame\\)$", "ServerStarted"))
+            mppatterns.append_child(flogparser.Pattern("Peer dropout for peer \\((?P<peer_id>\d+)\\) by peer \\(0\\) -- removing now", "PeerRemoved"))
             patterns.append(mppatterns)
 
             parser = flogparser.Parser(h.interrupted,tailqueue,patterns)
