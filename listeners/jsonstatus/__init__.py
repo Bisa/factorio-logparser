@@ -1,2 +1,2 @@
-def react(line):
-    print "JSONStatus got: ", line
+def react(event):
+    print "JSONStatus got: ", event.to_string()

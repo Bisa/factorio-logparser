@@ -1,33 +1,36 @@
 
+class ActionEvent():
+    pass
+
 class PeerAdded():
     def __init__(self, args):
-        super(self)
+        pass
 
 class PeerDesynced():
     def __init__(self, args):
-        super(self)
+        pass
 
 class PeerUserName():
     def __init__(self, args):
-        super(self)
+        pass
 
 class PeerRemoved():
     def __init__(self, args):
-        super(self)
+        pass
 
 class PeerDesynced():
     def __init__(self, args):
-        super(self)
+        pass
 
 class PeerPlayerIndex():
     def __init__(self, args):
-        super(self)
+        pass
 
 class ServerStarted():
     def __init__(self, args):
-        super(self)
+        pass
 
 class ServerStopped():
     def __init__(self, args):
-        super(self)
+        pass
 
