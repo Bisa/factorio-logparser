@@ -1,2 +1,4 @@
 def react(event):
-    print "JSONStatus got: ", event.to_string()
+    # TODO: Do stuff depending on the event
+    #print "JSONStatus got: \n", event.to_string()
+    pass
